@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Free Audit</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      background: #0f1222;
+      color: #f5f6fa;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+    .card {
+      width: 100%;
+      max-width: 420px;
+      background: #171b2e;
+      border-radius: 16px;
+      padding: 32px 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+    h1 { font-size: 1.6rem; margin: 0 0 8px; }
+    p.lead { margin: 0 0 24px; color: #b8bdd6; line-height: 1.5; }
+    label { display: block; font-size: 0.9rem; margin-bottom: 6px; color: #d7dbef; }
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid #2c3354;
+      background: #0f1222;
+      color: #f5f6fa;
+      font-size: 1rem;
+      margin-bottom: 16px;
+    }
+    input:focus { outline: 2px solid #6c7cff; border-color: transparent; }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      background: #6c7cff;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+    }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-secondary { background: #2a9d6f; margin-top: 12px; }
+    .msg { margin: 16px 0 0; min-height: 1.2em; font-size: 0.95rem; }
+    .msg.ok { color: #6fe3a8; }
+    .msg.err { color: #ff8a8a; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Free Audit</h1>
+    <p class="lead">Tell us how to reach you and we'll get in touch about your audit.</p>
+
+    <form id="auditForm" novalidate>
+      <label for="name">Name</label>
+      <input id="name" name="name" type="text" autocomplete="name" required>
+
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" autocomplete="email" required>
+
+      <label for="phone">Phone</label>
+      <input id="phone" name="phone" type="tel" autocomplete="tel" required>
+
+      <button type="submit" class="btn" id="submitBtn">Submit</button>
+      <p class="msg" id="msg" role="status" aria-live="polite"></p>
+    </form>
+
+    <a class="btn btn-secondary" href="https://payments.cashfree.com/forms/getaudit" target="_blank" rel="noopener">Free Audit for ₹1</a>
+  </main>
+
+  <script>
+    // Your Google Apps Script Web App URL
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzjWe3zrTGZU5NNn7BRW7ZFzjjnbPUhKvKYtBRMNsnu7kmxLLzVu0z3zHf9ZJfk33cGIQ/exec";
+
+    const form = document.getElementById("auditForm");
+    const btn = document.getElementById("submitBtn");
+    const msg = document.getElementById("msg");
+    let submitting = false;
+
+    function setMessage(text, type) {
+      msg.textContent = text;
+      msg.className = "msg " + (type || "");
+    }
+
+    function isValidName(v) { return v.length >= 2 && v.length <= 100 && /^[\p{L}\s.'-]+$/u.test(v); }
+    function isValidEmail(v) { return v.length > 0 && v.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v); }
+    function normalizePhone(v) { return v.replace(/[\s\-()]/g, ""); }
+    function isValidPhone(v) { return /^\+?[0-9]{7,15}$/.test(v); }
+
+    function showSuccess() {
+      setMessage("Thanks! Your request has been sent.", "ok");
+      form.reset();
+      submitting = false;
+      btn.disabled = false;
+    }
+
+    function showError() {
+      setMessage("Something went wrong. Please try again.", "err");
+      submitting = false;
+      btn.disabled = false;
+    }
+
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      if (submitting) return;
+
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const phone = normalizePhone(document.getElementById("phone").value.trim());
+
+      if (!isValidName(name)) { setMessage("Please enter a valid name.", "err"); return; }
+      if (!isValidEmail(email)) { setMessage("Please enter a valid email address.", "err"); return; }
+      if (!isValidPhone(phone)) { setMessage("Please enter a valid phone number.", "err"); return; }
+
+      submitting = true;
+      btn.disabled = true;
+      setMessage("Sending...", "");
+
+      const url = SCRIPT_URL + "?" + new URLSearchParams({ name, email, phone });
+
+      fetch(url, { method: "GET", mode: "no-cors" })
+        .then(() => showSuccess())
+        .catch(() => showError());
+    });
+  </script>
+</body>
+</html>
